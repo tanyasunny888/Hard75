@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="16dp" android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Одна строка — одна задача. Пустые строки будут проигнорированы."
+            android:textSize="13sp"/>
+
+        <EditText
+            android:id="@+id/etTasks"
+            android:layout_width="match_parent" android:layout_height="200dp"
+            android:gravity="top|start"
+            android:inputType="textMultiLine"
+            android:hint="Напр.:&#10;Вода 2 л&#10;Тренировка 45 мин&#10;Чтение 20 мин"/>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="120dp"
+    android:layout_margin="8dp"
+    app:cardUseCompatPadding="true"
+    app:cardCornerRadius="16dp"
+    app:cardBackgroundColor="@color/sticker_yellow">
+
+    <FrameLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:padding="12dp">
+
+        <!-- Вариант: Ещё не завершён -->
+        <LinearLayout
+            android:id="@+id/stateActive"
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvDayTitle"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="День 1"
+                android:textStyle="bold" android:textSize="18sp"
+                android:textColor="@android:color/black"/>
+
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Нажмите, чтобы открыть чек-лист"
+                android:textSize="13sp" android:layout_marginTop="6dp"/>
+        </LinearLayout>
+
+        <!-- Вариант: Завершён = плейсхолдер -->
+        <LinearLayout
+            android:id="@+id/stateDone"
+            android:visibility="gone"
+            android:layout_gravity="center"
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvWin"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="День N — победа"
+                android:textStyle="bold" android:textSize="16sp"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>

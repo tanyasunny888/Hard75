@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="sticker_yellow">#FFF9C4</color>
+    <color name="sticker_mint">#C8E6C9</color>
+    <color name="sticker_lavender">#E1BEE7</color>
+    <color name="sticker_peach">#FFE0B2</color>
+    <color name="sticker_blue">#BBDEFB</color>
+</resources>
