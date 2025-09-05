@@ -20,10 +20,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Главный экран -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
 
         <activity
             android:name=".CreateChallengeActivity"

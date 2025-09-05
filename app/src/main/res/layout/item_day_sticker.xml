@@ -1,51 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="120dp"
-    android:layout_margin="8dp"
-    app:cardUseCompatPadding="true"
-    app:cardCornerRadius="16dp"
-    app:cardBackgroundColor="@color/sticker_yellow">
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp">
 
+    <!-- Квадратный контейнер: высота = ширина (1:1) -->
     <FrameLayout
-        android:layout_width="match_parent" android:layout_height="match_parent"
-        android:padding="12dp">
+        android:id="@+id/noteRoot"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="1:1">
 
-        <!-- Вариант: Ещё не завершён -->
+        <!-- Фон-стиль (картинка или shape) -->
+        <ImageView
+            android:id="@+id/bgImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+            android:src="@drawable/sticker_style1" />
+
+        <!-- Контент стикера -->
         <LinearLayout
-            android:id="@+id/stateActive"
-            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="12dp"
             android:orientation="vertical">
 
+            <!-- Заголовок: День N -->
             <TextView
-                android:id="@+id/tvDayTitle"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:id="@+id/tvDay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="День 1"
-                android:textStyle="bold" android:textSize="18sp"
-                android:textColor="@android:color/black"/>
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="@android:color/black" />
 
-            <TextView
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Нажмите, чтобы открыть чек-лист"
-                android:textSize="13sp" android:layout_marginTop="6dp"/>
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Круговой прогресс и процент внизу -->
+            <FrameLayout
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center_horizontal|bottom"
+                android:layout_marginBottom="6dp">
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progress"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:indicatorSize="80dp"
+                    app:trackThickness="10dp"
+                    app:indicatorDirectionCircular="clockwise"
+                    app:indicatorColor="@color/progress_circle_pastel"
+                    app:trackColor="@color/progress_track_pastel"
+                    style="@style/Widget.Material3.CircularProgressIndicator" />
+
+                <TextView
+                    android:id="@+id/tvPercent"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="0%"
+                    android:textStyle="bold"
+                    android:textSize="16sp" />
+            </FrameLayout>
         </LinearLayout>
 
-        <!-- Вариант: Завершён = плейсхолдер -->
-        <LinearLayout
-            android:id="@+id/stateDone"
-            android:visibility="gone"
+        <!-- Оверлей «победа» -->
+        <ImageView
+            android:id="@+id/ivDone"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_gravity="center"
-            android:layout_width="match_parent" android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvWin"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="День N — победа"
-                android:textStyle="bold" android:textSize="16sp"/>
-
-        </LinearLayout>
-
+            android:src="@drawable/ic_check_circle"
+            android:visibility="gone"/>
     </FrameLayout>
-</com.google.android.material.card.MaterialCardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

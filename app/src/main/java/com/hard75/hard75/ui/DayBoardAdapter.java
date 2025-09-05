@@ -15,60 +15,78 @@ import com.hard75.hard75.model.DaySticker;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
+import android.widget.ImageView;
+
 
 public class DayBoardAdapter extends RecyclerView.Adapter<DayBoardAdapter.VH> {
 
     public interface Listener {
-        void onDayClick(DaySticker day);      // открыть чек-лист дня
-        void onDayLongClick(DaySticker day);  // пометить «победа»
+        void onDayClick(DaySticker day);      // открыть чек-лист
+        void onDayLongClick(DaySticker day);  // форс-победа (если нужно)
     }
 
     private final List<DaySticker> items = new ArrayList<>();
     private final Listener listener;
 
-    public DayBoardAdapter(Listener listener) { this.listener = listener; }
-
-    public void submit(List<DaySticker> data) {
-        items.clear(); items.addAll(data); notifyDataSetChanged();
-    }
+    public DayBoardAdapter(Listener l) { this.listener = l; }
+    public void submit(List<DaySticker> data) { items.clear(); items.addAll(data); notifyDataSetChanged(); }
 
     @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_day_sticker, parent, false);
         return new VH(v);
     }
 
-    @Override public void onBindViewHolder(@NonNull VH h, int pos) {
+    @Override
+    public void onBindViewHolder(@NonNull VH h, int pos) {
         DaySticker d = items.get(pos);
-        h.tvDayTitle.setText("День " + d.dayIndex);
-        h.tvWin.setText("День " + d.dayIndex + " — победа");
 
-        if (d.completed) {
-            h.stateActive.setVisibility(View.GONE);
-            h.stateDone.setVisibility(View.VISIBLE);
-            ((MaterialCardView) h.itemView).setCardBackgroundColor(
-                    h.itemView.getContext().getColor(R.color.sticker_mint)); // мягкий цвет победы
+        h.tvDay.setText("День " + d.dayIndex);
+
+        if (d.completed || d.percent >= 100) {
+            // Победа: показываем галочку, скрываем прогресс
+            h.ivDone.setVisibility(View.VISIBLE);
+            h.progress.setVisibility(View.GONE);
+            h.tvPercent.setVisibility(View.GONE);
+
+            h.itemView.setAlpha(0.5f);
+            h.itemView.setOnClickListener(null);
+            h.itemView.setOnLongClickListener(null);
         } else {
-            h.stateActive.setVisibility(View.VISIBLE);
-            h.stateDone.setVisibility(View.GONE);
-            ((MaterialCardView) h.itemView).setCardBackgroundColor(
-                    h.itemView.getContext().getColor(R.color.sticker_yellow));
-        }
+            // Идёт прогресс: показываем круг и %; галочку скрываем
+            h.ivDone.setVisibility(View.GONE);
+            h.progress.setVisibility(View.VISIBLE);
+            h.tvPercent.setVisibility(View.VISIBLE);
 
-        h.itemView.setOnClickListener(v -> { if (listener != null) listener.onDayClick(d); });
-        h.itemView.setOnLongClickListener(v -> { if (listener != null) listener.onDayLongClick(d); return true; });
+            h.progress.setMax(100);
+            h.progress.setProgress(d.percent);
+            h.tvPercent.setText(d.percent + "%");
+
+            h.itemView.setAlpha(1f);
+            h.itemView.setOnClickListener(v -> {
+                if (listener != null) listener.onDayClick(d);
+            });
+            h.itemView.setOnLongClickListener(v -> {
+                if (listener != null) listener.onDayLongClick(d);
+                return true;
+            });
+        }
     }
+
 
     @Override public int getItemCount() { return items.size(); }
 
     static class VH extends RecyclerView.ViewHolder {
-        TextView tvDayTitle, tvWin;
-        LinearLayout stateActive, stateDone;
+        TextView tvDay, tvPercent;
+        CircularProgressIndicator progress;
+        ImageView ivDone;
         VH(@NonNull View itemView) {
             super(itemView);
-            tvDayTitle = itemView.findViewById(R.id.tvDayTitle);
-            tvWin = itemView.findViewById(R.id.tvWin);
-            stateActive = itemView.findViewById(R.id.stateActive);
-            stateDone = itemView.findViewById(R.id.stateDone);
+            tvDay = itemView.findViewById(R.id.tvDay);
+            tvPercent = itemView.findViewById(R.id.tvPercent);
+            progress = itemView.findViewById(R.id.progress);
+            ivDone = itemView.findViewById(R.id.ivDone);
         }
     }
 }
+

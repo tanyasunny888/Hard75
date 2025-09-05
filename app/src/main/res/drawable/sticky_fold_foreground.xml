@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- прозрачный слой, чтобы клик проходил -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+        </shape>
+    </item>
+    <!-- загнутый угол снизу-справа: маленький треугольник -->
+    <item android:gravity="bottom|end">
+        <shape android:shape="rectangle">
+            <size android:width="0dp" android:height="0dp"/>
+            <solid android:color="@android:color/transparent"/>
+            <padding android:left="0dp" android:top="0dp" android:right="0dp" android:bottom="0dp"/>
+        </shape>
+    </item>
+    <item android:gravity="bottom|end">
+        <shape android:shape="line">
+            <stroke android:width="0dp" android:color="@android:color/transparent"/>
+        </shape>
+    </item>
+    <!-- имитация загиба: рисуем треугольник через rotate -->
+    <item
+        android:width="40dp"
+        android:height="40dp"
+        android:gravity="bottom|end">
+        <rotate android:fromDegrees="45">
+            <shape android:shape="rectangle">
+                <solid android:color="@color/sticker_fold_shadow"/>
+            </shape>
+        </rotate>
+    </item>
+</layer-list>
