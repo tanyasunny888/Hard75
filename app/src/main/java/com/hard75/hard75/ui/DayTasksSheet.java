@@ -1,4 +1,6 @@
 package com.hard75.hard75.ui;
+import android.widget.ImageButton;
+import com.hard75.hard75.data.db.DayProgressDao;
 
 import android.app.Activity;
 import android.content.Context;
@@ -20,12 +22,18 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+import com.hard75.hard75.data.db.ChallengeDao;
+import com.hard75.hard75.data.db.ChallengeEntity;
+import com.hard75.hard75.data.db.DayProgressDao;
+
 public class DayTasksSheet {
 
     public interface OnChanged { void onChanged(); }
 
-    public static void show(Context ctx, long challengeId, int dayIndex, OnChanged cb) {
-        // Обязательно activity-context
+    public static void show(Context ctx, long challengeId, int dayIndex, boolean editable, OnChanged cb) {
         final Activity activity = (Activity) ctx;
         final WeakReference<Activity> actRef = new WeakReference<>(activity);
 
@@ -37,14 +45,16 @@ public class DayTasksSheet {
         LinearProgressIndicator lineProgress = root.findViewById(R.id.lineProgress);
         TextView tvPercent = root.findViewById(R.id.tvPercent);
         RecyclerView rv = root.findViewById(R.id.rvTasks);
-        rv.setLayoutManager(new LinearLayoutManager(activity));
+        ImageButton btnClose = root.findViewById(R.id.btnClose);
 
-        // держим флаг, чтобы не трогать вьюхи после закрытия
+        rv.setLayoutManager(new LinearLayoutManager(activity));
+        rv.setItemAnimator(null);
+
+        // закрывать только по кнопке/свайпу/тапу мимо
+        btnClose.setOnClickListener(v -> dlg.dismiss());
+
         final boolean[] dismissed = { false };
-        dlg.setOnDismissListener(d -> {
-            dismissed[0] = true;
-            if (cb != null) cb.onChanged(); // всегда обновляем доску после закрытия
-        });
+        dlg.setOnDismissListener(d -> { dismissed[0] = true; if (cb != null) cb.onChanged(); });
 
         final DayTasksAdapter[] adapterHolder = new DayTasksAdapter[1];
         adapterHolder[0] = new DayTasksAdapter((task, checked) -> {
@@ -53,66 +63,64 @@ public class DayTasksSheet {
                 updateUI(actRef, dismissed, challengeId, dayIndex, lineProgress, tvPercent, adapterHolder[0], dlg);
             });
         });
+        adapterHolder[0].setEditable(editable); // ← важное
         rv.setAdapter(adapterHolder[0]);
 
-        tvTitle.setText("День " + dayIndex + " — чек-лист");
-        updateUI(actRef, dismissed, challengeId, dayIndex, lineProgress, tvPercent, adapterHolder[0], dlg);
+        // заголовок с датой (как делали ранее)
+        Executors.newSingleThreadExecutor().execute(() -> {
+            ChallengeEntity ch = AppDatabase.get(activity).challengeDao().getById(challengeId);
+            final String dateLabel = (ch == null) ? "" : formatDateForDay(ch.startDate, dayIndex);
+            activity.runOnUiThread(() -> tvTitle.setText("День " + dayIndex + (dateLabel.isEmpty() ? "" : " — (" + dateLabel + ")")));
+        });
 
+        updateUI(actRef, dismissed, challengeId, dayIndex, lineProgress, tvPercent, adapterHolder[0], dlg);
         dlg.show();
+    }
+
+    private static String formatDateForDay(long startMillis, int dayIndex) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(startMillis);
+        cal.add(Calendar.DATE, dayIndex - 1);
+        return new SimpleDateFormat("dd.MM", Locale.getDefault()).format(cal.getTime());
     }
 
     private static void updateUI(WeakReference<Activity> actRef,
                                  boolean[] dismissed,
                                  long cid, int day,
                                  LinearProgressIndicator lineProgress, TextView tvPercent,
-                                 DayTasksAdapter adapter,
-                                 BottomSheetDialog dlg) {
+                                 DayTasksAdapter adapter, BottomSheetDialog dlg) {
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            Activity act = actRef.get();
-            if (act == null) return;
+            Activity act = actRef.get(); if (act == null) return;
 
-            DayTaskDao tdao = AppDatabase.get(act).dayTaskDao();
-            List<DayTaskEntity> list = tdao.getByDay(cid, day);
-            int total = list.size();
-            int done = 0;
+            List<DayTaskEntity> list = AppDatabase.get(act).dayTaskDao().getByDay(cid, day);
+            int total = list.size(), done = 0;
             for (DayTaskEntity e : list) if (e.isDone) done++;
-            int percent = total == 0 ? 0 : Math.round(done * 100f / total);
-            boolean completed = total > 0 && done == total;
+            final int percent = total == 0 ? 0 : Math.round(done * 100f / total);
+            final boolean completed = total > 0 && done == total;
 
-            // Если закрыто — не делаем никаких UI-апдейтов
-            if (dismissed[0]) {
-                if (completed) {
-                    // на всякий случай отметим победу даже если закрыли быстро
-                    AppDatabase.get(act).dayProgressDao().markCompleted(cid, day);
-                }
-                return;
+
+            final DayProgressDao pdao = AppDatabase.get(act).dayProgressDao();
+            if (completed) {
+                pdao.markCompleted(cid, day);
+            } else {
+                pdao.markNotCompleted(cid, day);
             }
 
+            if (dismissed[0]) return;
+
             act.runOnUiThread(() -> {
-                // Activity все ещё жива?
-                if (act.isFinishing() || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed()))
-                    return;
-
-                // Диалог уже не показывается — ничего не обновляем
                 if (!dlg.isShowing()) return;
-
-                // Обновляем список и прогресс
                 adapter.submit(list);
                 lineProgress.setProgress(percent);
                 tvPercent.setText(percent + "%");
-
-                if (completed) {
-                    // Отмечаем победу в БД и закрываем лист.
-                    Executors.newSingleThreadExecutor().execute(() ->
-                            AppDatabase.get(act).dayProgressDao().markCompleted(cid, day));
-
-                    // Закрываем лист (onDismiss вызовет cb.onChanged() и обновит доску)
-                    try {
-                        dlg.dismiss();
-                    } catch (Exception ignore) { }
-                }
+                // без автозакрытия
             });
         });
     }
+
+
+
+
+
 }

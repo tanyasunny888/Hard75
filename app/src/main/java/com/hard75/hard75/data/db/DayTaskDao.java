@@ -17,7 +17,7 @@ public interface DayTaskDao {
     @Query("UPDATE day_tasks SET isDone=:isDone WHERE id=:taskId")
     void setDone(long taskId, boolean isDone);
 
-    // ⬇ агрегаты для всей доски
+    // агрегаты для процентов
     @Query("SELECT dayIndex AS dayIndex, " +
             "SUM(CASE WHEN isDone THEN 1 ELSE 0 END) AS done, " +
             "COUNT(*) AS total " +
@@ -26,4 +26,10 @@ public interface DayTaskDao {
             "GROUP BY dayIndex " +
             "ORDER BY dayIndex ASC")
     List<DayProgressAgg> getAggForBoard(long cid);
+
+
+    // удалить задачи, начиная с конкретного дня (включительно)
+    @Query("DELETE FROM day_tasks WHERE challengeId=:cid AND dayIndex>=:fromDay")
+    void deleteFromDay(long cid, int fromDay);
 }
+

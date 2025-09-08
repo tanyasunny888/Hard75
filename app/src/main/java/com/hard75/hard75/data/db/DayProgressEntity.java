@@ -4,16 +4,17 @@ import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(
-        tableName = "day_progress",
-        indices = {@Index("challengeId"), @Index(value={"challengeId","dayIndex"}, unique = true)}
-)
+@Entity(tableName = "day_progress",
+        indices = {
+                @Index("challengeId"),
+                @Index(value = {"challengeId", "dayIndex"}, unique = true)
+        })
 public class DayProgressEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
     public long challengeId;
-    public int dayIndex;     // 1..N
+    public int dayIndex;
     public boolean completed;
 
     public DayProgressEntity(long challengeId, int dayIndex, boolean completed) {

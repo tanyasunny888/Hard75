@@ -30,6 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+
 /**
  * Мастер создания челленджа:
  * - выбор уровня (soft / medium / hard)
@@ -51,6 +56,11 @@ public class CreateChallengeActivity extends AppCompatActivity {
     private LinearLayout llPreview;
     private TextView tvPreviewEmpty;
 
+    private RecyclerView rvEditableTasks;
+    private FloatingActionButton fabAddTask;
+    private com.hard75.hard75.ui.CreateTasksAdapter editAdapter;
+
+
     // Текущий отредактированный список задач (если null — берём шаблон по уровню)
     @Nullable
     private List<String> customTasks = null;
@@ -67,20 +77,36 @@ public class CreateChallengeActivity extends AppCompatActivity {
         rgLevel       = findViewById(R.id.rgLevel);
         seekDuration  = findViewById(R.id.seekDuration);
         tvDurationVal = findViewById(R.id.tvDurationVal);
-        btnCustomize  = findViewById(R.id.btnCustomize);
         btnStart      = findViewById(R.id.btnStart);
 
-        llPreview = findViewById(R.id.llPreview);
-        tvPreviewEmpty = findViewById(R.id.tvPreviewEmpty);
+        // 👇 новые элементы
+        rvEditableTasks = findViewById(R.id.rvEditableTasks);
+        fabAddTask      = findViewById(R.id.fabAddTask);
 
-        // при смене уровня сбрасываем кастомный список и обновляем превью
+        rvEditableTasks.setLayoutManager(new LinearLayoutManager(this));
+        editAdapter = new com.hard75.hard75.ui.CreateTasksAdapter(new com.hard75.hard75.ui.CreateTasksAdapter.Listener() {
+            @Override public void onEdit(int position, String currentText) { showEditDialog(position, currentText); }
+            @Override public void onDelete(int position) {
+                editAdapter.remove(position);
+                customTasks = editAdapter.data();
+            }
+        });
+        rvEditableTasks.setAdapter(editAdapter);
+
+        // стартовое наполнение
+        customTasks = new ArrayList<>(com.hard75.hard75.domain.ChallengeTemplates.baseTasks(currentLevel()));
+        editAdapter.submit(customTasks);
+
+
+        fabAddTask.setOnClickListener(v -> showAddDialog());
+
+        // При смене уровня — подставляем новый шаблон
         rgLevel.setOnCheckedChangeListener((group, checkedId) -> {
-            customTasks = null;       // пусть по умолчанию новые шаблоны уровня
-            updatePreview();          // обновим список превью
+            customTasks = new ArrayList<>(com.hard75.hard75.domain.ChallengeTemplates.baseTasks(currentLevel()));
+            editAdapter.submit(customTasks);
         });
 
-
-        // SeekBar настроен в XML как 0..54 (чтобы +21 = 21..75)
+        // SeekBar: 0..54 + 21 = 21..75
         updateDurationText(MIN_DAYS + seekDuration.getProgress());
         seekDuration.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -90,11 +116,59 @@ public class CreateChallengeActivity extends AppCompatActivity {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
-        btnCustomize.setOnClickListener(v -> showCustomizeDialog(currentLevel()));
-        btnStart.setOnClickListener(v -> startChallenge());
-        updatePreview();
+        // FAB «добавить пункт»
+        fabAddTask.setOnClickListener(v -> showAddDialog());
 
+        // Старт челленджа
+        btnStart.setOnClickListener(v -> startChallenge());
     }
+
+    private void showAddDialog() {
+        final EditText et = new EditText(this);
+        et.setHint("Новый пункт");
+        et.setSingleLine(false);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        et.setPadding(pad, pad, pad, pad);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Добавить пункт")
+                .setView(et)
+                .setNegativeButton("Отмена", null)
+                .setPositiveButton("Добавить", (d, w) -> {
+                    String t = et.getText().toString().trim();
+                    if (t.isEmpty()) return;
+                    if (editAdapter != null) {
+                        editAdapter.addItem(t);
+                        // синхронизируем customTasks с адаптером
+                        customTasks = editAdapter.data();
+                    }
+                })
+                .show();
+    }
+
+    private void showEditDialog(int position, String current) {
+        final EditText et = new EditText(this);
+        et.setText(current);
+        et.setSelection(current != null ? current.length() : 0);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        et.setPadding(pad, pad, pad, pad);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Редактировать пункт")
+                .setView(et)
+                .setNegativeButton("Отмена", null)
+                .setPositiveButton("Сохранить", (d, w) -> {
+                    String t = et.getText().toString().trim();
+                    if (t.isEmpty()) return;
+                    if (editAdapter != null) {
+                        editAdapter.replace(position, t);
+                        customTasks = editAdapter.data();
+                    }
+                })
+                .show();
+    }
+
+
 
     // ----- Вспомогательные методы UI -----
 
@@ -161,11 +235,11 @@ public class CreateChallengeActivity extends AppCompatActivity {
         long start = System.currentTimeMillis();
 
         // Базовые задачи (с учётом редактирования)
-        List<String> baseList = (customTasks != null && !customTasks.isEmpty())
-                ? customTasks
-                : ChallengeTemplates.baseTasks(level);
-        // финальная ссылка для лямбды
+        List<String> baseList = editAdapter != null && !editAdapter.data().isEmpty()
+                ? editAdapter.data()
+                : com.hard75.hard75.domain.ChallengeTemplates.baseTasks(level);
         final List<String> finalBase = baseList;
+
 
         if (finalBase.isEmpty()) {
             Toast.makeText(this, "Выберите хотя бы один пункт чек-листа", Toast.LENGTH_SHORT).show();

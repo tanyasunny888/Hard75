@@ -8,10 +8,10 @@ public class ChallengeEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
-    public String level;       // "soft" | "medium" | "hard"
-    public int durationDays;   // 21..75
-    public long startDate;     // System.currentTimeMillis()
-    public String status;      // "ACTIVE" | "PAUSED" | "COMPLETED"
+    public String level;
+    public int durationDays;
+    public long startDate;
+    public String status;
 
     public ChallengeEntity(String level, int durationDays, long startDate, String status) {
         this.level = level;
@@ -20,3 +20,4 @@ public class ChallengeEntity {
         this.status = status;
     }
 }
+

@@ -6,9 +6,20 @@ import androidx.room.Query;
 
 @Dao
 public interface ChallengeDao {
-    @Insert
-    long insert(ChallengeEntity e);
 
-    @Query("SELECT * FROM challenges WHERE status='ACTIVE' ORDER BY id DESC LIMIT 1")
+    @Insert
+    long insert(ChallengeEntity entity);
+
+    @Query("SELECT * FROM challenges WHERE status='ACTIVE' LIMIT 1")
     ChallengeEntity getActive();
+
+    @Query("SELECT * FROM challenges WHERE id=:id LIMIT 1")
+    ChallengeEntity getById(long id);
+
+    @Query("UPDATE challenges SET status=:status WHERE id=:id")
+    void updateStatus(long id, String status);
+
+    @Query("SELECT COUNT(*) FROM challenges")
+    int countAll();
 }
+

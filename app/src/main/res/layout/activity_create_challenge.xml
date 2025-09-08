@@ -1,113 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:fillViewport="true"
+    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
-        android:padding="16dp"
-        android:orientation="vertical"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
-        <TextView
-            android:text="Выберите уровень сложности"
-            android:textStyle="bold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <RadioGroup
-            android:id="@+id/rgLevel"
-            android:orientation="horizontal"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:padding="16dp"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content">
-            <RadioButton
-                android:id="@+id/rbSoft"
-                android:text="Soft"
-                android:checked="true" />
-            <RadioButton
-                android:id="@+id/rbMedium"
-                android:text="Medium" />
-            <RadioButton
-                android:id="@+id/rbHard"
-                android:text="Hard" />
-        </RadioGroup>
 
-        <TextView
-            android:layout_marginTop="12dp"
-            android:text="Длительность (21–75 дней)"
-            android:textStyle="bold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            <!-- Блок выбора уровня/длительности (твои текущие вьюхи) -->
+            <TextView
+                android:text="Выберите уровень сложности"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
 
-        <!-- max=54 => 0..54, +21 = 21..75 -->
-        <SeekBar
-            android:id="@+id/seekDuration"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="54"
-            android:progress="54"/>
+            <RadioGroup
+                android:id="@+id/rgLevel"
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+                <RadioButton
+                    android:id="@+id/rbSoft"
+                    android:text="Soft"
+                    android:checked="true"/>
+                <RadioButton
+                    android:id="@+id/rbMedium"
+                    android:text="Medium"/>
+                <RadioButton
+                    android:id="@+id/rbHard"
+                    android:text="Hard"/>
+            </RadioGroup>
 
-        <TextView
-            android:id="@+id/tvDurationVal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="75 дней"/>
+            <TextView
+                android:layout_marginTop="12dp"
+                android:text="Длительность (21–75 дней)"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
 
-        <Button
-            android:id="@+id/btnCustomize"
-            android:layout_marginTop="16dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Настроить чек-лист (вкл/выкл пункты)"/>
-
-        <Button
-            android:id="@+id/btnStart"
-            android:layout_marginTop="8dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Старт челленджа"/>
-
-        <!-- Превью дня челленджа -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardPreview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardUseCompatPadding="true">
-
-            <LinearLayout
+            <SeekBar
+                android:id="@+id/seekDuration"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:max="54"
+                android:progress="54"/>
 
-                <TextView
-                    android:id="@+id/tvPreviewTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Превью дня челленджа"
-                    android:textStyle="bold"
-                    android:textSize="16sp"/>
+            <TextView
+                android:id="@+id/tvDurationVal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="75 дней"/>
 
-                <LinearLayout
-                    android:id="@+id/llPreview"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="8dp" />
+            <!-- Заголовок конструктора чек-листа -->
+            <TextView
+                android:id="@+id/tvChecklistTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Пункты дня (чек-лист)"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
 
-                <TextView
-                    android:id="@+id/tvPreviewEmpty"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Список пуст — добавьте пункты в «Настроить чек-лист»"
-                    android:visibility="gone"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            <!-- Список редактируемых пунктов -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvEditableTasks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                android:layout_marginTop="8dp"/>
 
-    </LinearLayout>
-</ScrollView>
+            <!-- Кнопка Старт ниже списка -->
+            <Button
+                android:id="@+id/btnStart"
+                android:layout_marginTop="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Старт челленджа"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Плавающая кнопка добавления -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddTask"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="Добавить пункт"
+        app:layout_anchorGravity="bottom|end"
+        app:layout_anchor="@id/rvEditableTasks"
+        android:layout_margin="20dp"
+        app:srcCompat="@android:drawable/ic_input_add"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

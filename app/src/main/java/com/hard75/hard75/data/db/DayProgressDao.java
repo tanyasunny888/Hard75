@@ -7,14 +7,24 @@ import androidx.room.Update;
 
 import java.util.List;
 
+
 @Dao
 public interface DayProgressDao {
     @Insert
-    void insertAll(List<DayProgressEntity> days);
+    void insertAll(List<DayProgressEntity> entities);
 
     @Query("SELECT * FROM day_progress WHERE challengeId=:cid ORDER BY dayIndex ASC")
     List<DayProgressEntity> getBoard(long cid);
 
     @Query("UPDATE day_progress SET completed=1 WHERE challengeId=:cid AND dayIndex=:day")
     void markCompleted(long cid, int day);
+
+    @Query("UPDATE day_progress SET completed=0 WHERE challengeId=:cid AND dayIndex=:day")
+    void markNotCompleted(long cid, int day);
+
+    // сбросить завершение с сегодняшнего дня и дальше
+    @Query("UPDATE day_progress SET completed=0 WHERE challengeId=:cid AND dayIndex>=:fromDay")
+    void resetFromDay(long cid, int fromDay);
 }
+
+
