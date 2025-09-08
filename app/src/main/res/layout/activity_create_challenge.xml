@@ -17,10 +17,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- Блок выбора уровня/длительности (твои текущие вьюхи) -->
+            <!-- Заголовок уровня -->
             <TextView
                 android:text="Выберите уровень сложности"
                 android:textStyle="bold"
+                android:textSize="18sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
@@ -28,23 +29,31 @@
                 android:id="@+id/rgLevel"
                 android:orientation="horizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
                 <RadioButton
                     android:id="@+id/rbSoft"
                     android:text="Soft"
+                    android:textSize="16sp"
                     android:checked="true"/>
                 <RadioButton
                     android:id="@+id/rbMedium"
-                    android:text="Medium"/>
+                    android:text="Medium"
+                    android:textSize="16sp"
+                    android:layout_marginStart="12dp"/>
                 <RadioButton
                     android:id="@+id/rbHard"
-                    android:text="Hard"/>
+                    android:text="Hard"
+                    android:textSize="16sp"
+                    android:layout_marginStart="12dp"/>
             </RadioGroup>
 
+            <!-- Длительность -->
             <TextView
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
                 android:text="Длительность (21–75 дней)"
                 android:textStyle="bold"
+                android:textSize="18sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
@@ -53,52 +62,58 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:max="54"
-                android:progress="54"/>
+                android:progress="54"
+                android:layout_marginTop="4dp"/>
 
             <TextView
                 android:id="@+id/tvDurationVal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="75 дней"/>
+                android:text="75 дней"
+                android:textSize="16sp"
+                android:layout_marginTop="4dp"/>
 
-            <!-- Заголовок конструктора чек-листа -->
+            <!-- Конструктор чек-листа -->
             <TextView
                 android:id="@+id/tvChecklistTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 android:text="Пункты дня (чек-лист)"
                 android:textStyle="bold"
-                android:textSize="16sp"/>
+                android:textSize="18sp"/>
 
-            <!-- Список редактируемых пунктов -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvEditableTasks"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false"
                 android:overScrollMode="never"
-                android:layout_marginTop="8dp"/>
+                android:layout_marginTop="8dp"
+                android:paddingBottom="8dp"/>
 
-            <!-- Кнопка Старт ниже списка -->
-            <Button
-                android:id="@+id/btnStart"
-                android:layout_marginTop="16dp"
+            <!-- Кнопка 'Добавить пункт' сразу под списком -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddTask"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Добавить пункт"
+                app:icon="@android:drawable/ic_input_add"
+                app:iconPadding="8dp"
+                app:iconGravity="textStart"/>
+
+            <!-- Большая кнопка старта в самом низу -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStart"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:text="Старт челленджа"/>
+
         </LinearLayout>
     </ScrollView>
-
-    <!-- Плавающая кнопка добавления -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAddTask"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:contentDescription="Добавить пункт"
-        app:layout_anchorGravity="bottom|end"
-        app:layout_anchor="@id/rvEditableTasks"
-        android:layout_margin="20dp"
-        app:srcCompat="@android:drawable/ic_input_add"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

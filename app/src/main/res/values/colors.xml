@@ -10,9 +10,8 @@
     <color name="progress_green_pastel">#A5D6A7</color>
     <color name="progress_track_pastel">#E0E0E0</color>
     <color name="sticker_fold_shadow">#E6D016</color>
-    <color name="progress_circle_pastel">#A5D6A7</color>
+    <color name="progress_circle_pastel">#8cd58f</color>
     <color name="progress_line_pastel">#90CAF9</color>
-    <color name="summary_ok">#A5D6A7</color>   <!-- зелёная -->
-    <color name="summary_failed">#EF9A9A</color> <!-- красная -->
-
+    <color name="summary_ok">#A5D6A7</color>
+    <color name="summary_failed">#EF9A9A</color>
 </resources>

@@ -1,89 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<com.hard75.hard75.ui.views.SquareFrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="8dp">
+    android:layout_height="wrap_content">
 
-    <!-- Квадратный контейнер: высота = ширина (1:1) -->
     <FrameLayout
-        android:id="@+id/noteRoot"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="1:1">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-        <!-- Фон-стиль (картинка или shape) -->
+        <!-- фон-изображение с «загнутым уголком» (если используешь картинку) -->
         <ImageView
             android:id="@+id/bgImage"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="fitXY"
-            android:src="@drawable/sticker_style1" />
+            android:scaleType="centerCrop"
+            android:contentDescription="@null"
+            android:src="@drawable/sticker_style1"/>
 
-        <!-- Контент стикера -->
+        <!-- контент стикера -->
         <LinearLayout
             android:id="@+id/contentContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="12dp"
-            android:orientation="vertical">
+            android:padding="10dp"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
-            <!-- Заголовок: День N -->
             <TextView
                 android:id="@+id/tvDay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="День 1"
                 android:textStyle="bold"
-                android:textSize="18sp"
-                android:textColor="@android:color/black" />
+                android:textSize="@dimen/sticker_day_text"
+                android:textColor="#222222"
+                android:layout_marginBottom="0dp" />
 
-            <Space
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_weight="1"/>
 
-            <!-- Круговой прогресс и процент внизу -->
-            <FrameLayout
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_gravity="center_horizontal|bottom"
-                android:layout_marginBottom="6dp">
+            <!-- низ: круг прогресса + % -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginBottom="4dp"
+                >
 
                 <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/progress"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    app:indicatorSize="80dp"
-                    app:trackThickness="10dp"
-                    app:indicatorDirectionCircular="clockwise"
+                    style="@style/Widget.Material3.CircularProgressIndicator"
+                    android:layout_width="@dimen/sticker_progress_size"
+                    android:layout_height="@dimen/sticker_progress_size"
+                    app:indicatorSize="@dimen/sticker_progress_size"
+                    app:trackThickness="8dp"
+                    android:indeterminate="false"
                     app:indicatorColor="@color/progress_circle_pastel"
-                    app:trackColor="@color/progress_track_pastel"
-                    style="@style/Widget.Material3.CircularProgressIndicator" />
+                    app:trackColor="@color/progress_track_pastel" />
 
                 <TextView
                     android:id="@+id/tvPercent"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="0%"
-                    android:textStyle="bold"
-                    android:textSize="16sp" />
-            </FrameLayout>
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"/>
+            </LinearLayout>
         </LinearLayout>
 
-        <!-- Оверлей «победа» -->
+        <!-- большая зелёная галочка при 100% -->
         <ImageView
             android:id="@+id/ivDone"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
             android:layout_gravity="center"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
             android:src="@drawable/ic_check_circle"
-            android:visibility="gone"/>
+            android:contentDescription="@null"/>
     </FrameLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+</com.hard75.hard75.ui.views.SquareFrameLayout>

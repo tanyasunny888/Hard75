@@ -1,5 +1,12 @@
 package com.hard75.hard75;
 
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.OnApplyWindowInsetsListener;
+import android.view.ViewGroup;
+import androidx.core.graphics.Insets;
+
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Rect;
@@ -28,6 +35,7 @@ import com.hard75.hard75.ui.DayBoardAdapter;
 import com.hard75.hard75.model.DaySticker;
 import com.hard75.hard75.ui.DayTasksSheet;
 
+import android.util.DisplayMetrics;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -35,6 +43,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import com.hard75.hard75.reminders.ReminderReceiver;
+import com.hard75.hard75.reminders.ReminderScheduler;
+import com.hard75.hard75.reminders.ReminderPermissions;
+
+
+import androidx.appcompat.app.AlertDialog;
+
 
 public class ChallengeBoardActivity extends AppCompatActivity {
 
@@ -49,15 +64,45 @@ public class ChallengeBoardActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
         setContentView(R.layout.activity_challenge_board);
 
         rv = findViewById(R.id.rvBoard);
         fabMenu = findViewById(R.id.fabMenu);
         fabMenu.setOnClickListener(v -> showSettingsMenu());
 
+        View root = findViewById(R.id.rootBoard);
+
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets sys = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+            // верх/бока — у корня (чтобы статус-бар/«чёлка» не перекрывали контент)
+            v.setPadding(sys.left, sys.top, sys.right, 0);
+
+            // низ — паддинг у списка (чтобы последний ряд не уезжал под жестовую панель)
+            int gap = getResources().getDimensionPixelSize(R.dimen.board_item_gap);
+            rv.setPadding(
+                    rv.getPaddingLeft(),
+                    rv.getPaddingTop(),
+                    rv.getPaddingRight(),
+                    sys.bottom + gap
+            );
+
+            // сместим FAB с учётом инcетов
+            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) fabMenu.getLayoutParams();
+            int base = (int) (16 * getResources().getDisplayMetrics().density);
+            lp.rightMargin = base + sys.right;
+            lp.bottomMargin = base + sys.bottom;
+            fabMenu.setLayoutParams(lp);
+
+            return insets;
+        });
+
 
         // сетка стикеров
         rv.setLayoutManager(new GridLayoutManager(this, 3));
+        applyGridSpan();
         rv.setHasFixedSize(true);
         rv.addItemDecoration(new SpacesItemDecoration(getResources().getDimensionPixelSize(R.dimen.board_item_gap)));
 
@@ -91,8 +136,16 @@ public class ChallengeBoardActivity extends AppCompatActivity {
 
     @Override protected void onResume() {
         super.onResume();
+        applyGridSpan();
         loadBoard();
+
+        // если пользователь только что дал разрешение и флаг reminders_enabled уже true — поставим будильники
+        if (com.hard75.hard75.util.Prefs.isRemindersEnabled(this)
+                && ReminderPermissions.canScheduleExactAlarms(this)) {
+            ReminderScheduler.scheduleDefault(this);
+        }
     }
+
 
     /* =========================  ЗАГРУЗКА/ПОДСЧЁТ  ========================= */
 
@@ -202,6 +255,37 @@ public class ChallengeBoardActivity extends AppCompatActivity {
         }
     }
 
+    private String fmt2(int v) { return (v < 10 ? "0" : "") + v; }
+
+    private void showSettingsMenu() {
+        boolean enabled = com.hard75.hard75.util.Prefs.isRemindersEnabled(this);
+        String remindersTitle = "Напоминания (" + (enabled ? "ВКЛ" : "ВЫКЛ") + ")";
+
+        String[] items = {
+                "Сводка",
+                "Изменить список задач челленджа",
+                "Начать челлендж заново",
+                remindersTitle
+        };
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Меню")
+                .setItems(items, (dialog, which) -> {
+                    if (which == 0) {
+                        showSummary();
+                    } else if (which == 1) {
+                        if (isFailed) showFailedMessageAndOfferRestart();
+                        else promptEditFutureTasks();
+                    } else if (which == 2) {
+                        confirmRestart();
+                    } else if (which == 3) {
+                        startActivity(new Intent(this, com.hard75.hard75.reminders.ReminderSettingsActivity.class));
+                    }
+                })
+                .show();
+    }
+
+
     /* =========================  СВОДКА / НАСТРОЙКИ  ========================= */
 
     private void showSummary() {
@@ -265,28 +349,6 @@ public class ChallengeBoardActivity extends AppCompatActivity {
             });
         });
     }
-
-
-    private void showSettingsMenu() {
-        String[] items = {"Сводка", "Изменить список задач челленджа", "Начать челлендж заново"};
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Меню")
-                .setItems(items, (dialog, which) -> {
-                    if (which == 0) {
-                        showSummary();
-                    } else if (which == 1) {
-                        if (isFailed) {
-                            showFailedMessageAndOfferRestart();
-                        } else {
-                            promptEditFutureTasks();
-                        }
-                    } else if (which == 2) {
-                        confirmRestart();
-                    }
-                })
-                .show();
-    }
-
 
     private void showFailedMessageAndOfferRestart() {
         new androidx.appcompat.app.AlertDialog.Builder(this)
@@ -401,4 +463,89 @@ public class ChallengeBoardActivity extends AppCompatActivity {
             outRect.set(space, space, space, space);
         }
     }
+
+    private void applyGridSpan() {
+        GridLayoutManager glm = (GridLayoutManager) rv.getLayoutManager();
+        if (glm == null) return;
+
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        float widthDp = dm.widthPixels / dm.density;
+        float targetDp = getResources().getDimension(R.dimen.sticker_target_dp) / dm.density;
+
+        int span = Math.max(2, (int) Math.floor(widthDp / targetDp));
+        glm.setSpanCount(span);
+        rv.requestLayout();
+    }
+
+    private void ensurePostNotificationsPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 5001);
+            }
+        }
+    }
+
+    private void toggleReminders() {
+        boolean enable = !com.hard75.hard75.util.Prefs.isRemindersEnabled(this);
+        if (enable) {
+            ensurePostNotificationsPermission();
+            if (!com.hard75.hard75.reminders.ReminderPermissions.canScheduleExactAlarms(this)) {
+                com.hard75.hard75.reminders.ReminderPermissions.requestExactAlarm(this);
+                Toast.makeText(this, "Разрешите «Точные будильники» и снова включите напоминания", Toast.LENGTH_LONG).show();
+                return;
+            }
+            com.hard75.hard75.util.Prefs.setRemindersEnabled(this, true);
+            com.hard75.hard75.reminders.ReminderScheduler.scheduleAll(this);
+            Toast.makeText(this, "Напоминания включены", Toast.LENGTH_SHORT).show();
+        } else {
+            com.hard75.hard75.util.Prefs.setRemindersEnabled(this, false);
+            com.hard75.hard75.reminders.ReminderScheduler.cancelAll(this);
+            Toast.makeText(this, "Напоминания выключены", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void pickMorningTime() {
+        int h = com.hard75.hard75.util.Prefs.getMorningHour(this);
+        int m = com.hard75.hard75.util.Prefs.getMorningMinute(this);
+        android.app.TimePickerDialog dlg = new android.app.TimePickerDialog(
+                this, (view, hourOfDay, minute) -> {
+            com.hard75.hard75.util.Prefs.setMorningTime(this, hourOfDay, minute);
+            if (com.hard75.hard75.util.Prefs.isRemindersEnabled(this)) {
+                if (!com.hard75.hard75.reminders.ReminderPermissions.canScheduleExactAlarms(this)) {
+                    com.hard75.hard75.reminders.ReminderPermissions.requestExactAlarm(this);
+                    Toast.makeText(this, "Разрешите «Точные будильники»", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                com.hard75.hard75.reminders.ReminderScheduler.rescheduleMorning(this);
+                Toast.makeText(this, "Утреннее: " + fmt2(hourOfDay)+":"+fmt2(minute), Toast.LENGTH_SHORT).show();
+            }
+        }, h, m, true);
+        dlg.show();
+    }
+
+    private void pickEveningTime() {
+        int h = com.hard75.hard75.util.Prefs.getEveningHour(this);
+        int m = com.hard75.hard75.util.Prefs.getEveningMinute(this);
+        android.app.TimePickerDialog dlg = new android.app.TimePickerDialog(
+                this, (view, hourOfDay, minute) -> {
+            com.hard75.hard75.util.Prefs.setEveningTime(this, hourOfDay, minute);
+            if (com.hard75.hard75.util.Prefs.isRemindersEnabled(this)) {
+                if (!com.hard75.hard75.reminders.ReminderPermissions.canScheduleExactAlarms(this)) {
+                    com.hard75.hard75.reminders.ReminderPermissions.requestExactAlarm(this);
+                    Toast.makeText(this, "Разрешите «Точные будильники»", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                com.hard75.hard75.reminders.ReminderScheduler.rescheduleEvening(this);
+                Toast.makeText(this, "Вечернее: " + fmt2(hourOfDay)+":"+fmt2(minute), Toast.LENGTH_SHORT).show();
+            }
+        }, h, m, true);
+        dlg.show();
+    }
+
+
+
+
+
+
 }

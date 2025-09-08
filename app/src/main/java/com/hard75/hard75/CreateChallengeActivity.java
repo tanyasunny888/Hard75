@@ -55,10 +55,10 @@ public class CreateChallengeActivity extends AppCompatActivity {
     private Button btnCustomize, btnStart;
     private LinearLayout llPreview;
     private TextView tvPreviewEmpty;
-
     private RecyclerView rvEditableTasks;
-    private FloatingActionButton fabAddTask;
     private com.hard75.hard75.ui.CreateTasksAdapter editAdapter;
+    private com.google.android.material.button.MaterialButton btnAddTask;
+
 
 
     // Текущий отредактированный список задач (если null — берём шаблон по уровню)
@@ -78,14 +78,14 @@ public class CreateChallengeActivity extends AppCompatActivity {
         seekDuration  = findViewById(R.id.seekDuration);
         tvDurationVal = findViewById(R.id.tvDurationVal);
         btnStart      = findViewById(R.id.btnStart);
-
-        // 👇 новые элементы
         rvEditableTasks = findViewById(R.id.rvEditableTasks);
-        fabAddTask      = findViewById(R.id.fabAddTask);
+        btnAddTask      = findViewById(R.id.btnAddTask);
 
         rvEditableTasks.setLayoutManager(new LinearLayoutManager(this));
         editAdapter = new com.hard75.hard75.ui.CreateTasksAdapter(new com.hard75.hard75.ui.CreateTasksAdapter.Listener() {
-            @Override public void onEdit(int position, String currentText) { showEditDialog(position, currentText); }
+            @Override public void onEdit(int position, String currentText) {
+                showEditDialog(position, currentText);
+            }
             @Override public void onDelete(int position) {
                 editAdapter.remove(position);
                 customTasks = editAdapter.data();
@@ -93,15 +93,13 @@ public class CreateChallengeActivity extends AppCompatActivity {
         });
         rvEditableTasks.setAdapter(editAdapter);
 
+
         // стартовое наполнение
         customTasks = new ArrayList<>(com.hard75.hard75.domain.ChallengeTemplates.baseTasks(currentLevel()));
         editAdapter.submit(customTasks);
 
-
-        fabAddTask.setOnClickListener(v -> showAddDialog());
-
         // При смене уровня — подставляем новый шаблон
-        rgLevel.setOnCheckedChangeListener((group, checkedId) -> {
+        rgLevel.setOnCheckedChangeListener((g, id) -> {
             customTasks = new ArrayList<>(com.hard75.hard75.domain.ChallengeTemplates.baseTasks(currentLevel()));
             editAdapter.submit(customTasks);
         });
@@ -116,8 +114,7 @@ public class CreateChallengeActivity extends AppCompatActivity {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
-        // FAB «добавить пункт»
-        fabAddTask.setOnClickListener(v -> showAddDialog());
+        btnAddTask.setOnClickListener(v -> showAddDialog());
 
         // Старт челленджа
         btnStart.setOnClickListener(v -> startChallenge());
@@ -224,73 +221,74 @@ public class CreateChallengeActivity extends AppCompatActivity {
     // ----- Основная логика создания челленджа -----
 
     private void startChallenge() {
-        String level = currentLevel();
+        try {
+            String level = currentLevel();
 
-        int duration = MIN_DAYS + seekDuration.getProgress();
-        if (duration < MIN_DAYS) duration = MIN_DAYS;
-        if (duration > MAX_DAYS) duration = MAX_DAYS;
+            int duration = MIN_DAYS + seekDuration.getProgress();
+            if (duration < MIN_DAYS) duration = MIN_DAYS;
+            if (duration > MAX_DAYS) duration = MAX_DAYS;
 
-        final int finalDuration = duration;
+            final int finalDuration = duration;
+            long start = System.currentTimeMillis();
 
-        long start = System.currentTimeMillis();
+            List<String> baseList = (customTasks != null && !customTasks.isEmpty())
+                    ? customTasks
+                    : ChallengeTemplates.baseTasks(level);
+            final List<String> finalBase = baseList;
 
-        // Базовые задачи (с учётом редактирования)
-        List<String> baseList = editAdapter != null && !editAdapter.data().isEmpty()
-                ? editAdapter.data()
-                : com.hard75.hard75.domain.ChallengeTemplates.baseTasks(level);
-        final List<String> finalBase = baseList;
-
-
-        if (finalBase.isEmpty()) {
-            Toast.makeText(this, "Выберите хотя бы один пункт чек-листа", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Сущность челленджа
-        ChallengeEntity ch = new ChallengeEntity(level, duration, start, "ACTIVE");
-
-        btnStart.setEnabled(false);
-        Executors.newSingleThreadExecutor().execute(() -> {
-            try {
-                AppDatabase db = AppDatabase.get(this);
-                ChallengeDao cdao = db.challengeDao();
-                DayTaskDao tdao = db.dayTaskDao();
-                DayProgressDao pdao = db.dayProgressDao();
-
-                long cid = cdao.insert(ch);
-
-                List<DayTaskEntity> allTasks = new ArrayList<>();
-                for (int day = 1; day <= finalDuration; day++) {
-                    int order = 0;
-                    for (String title : finalBase) {
-                        allTasks.add(new DayTaskEntity(cid, day, title, false, false, order++));
-                    }
-                }
-                tdao.insertAll(allTasks);
-
-                List<DayProgressEntity> board = new ArrayList<>();
-                for (int day = 1; day <= finalDuration; day++) {
-                    board.add(new DayProgressEntity(cid, day, false));
-                }
-                pdao.insertAll(board);
-
-                runOnUiThread(() -> {
-                    Toast.makeText(this,
-                            "Челлендж создан: " + level + " • " + finalDuration + " дней",
-                            Toast.LENGTH_LONG).show();
-                    startActivity(new Intent(this, ChallengeBoardActivity.class));
-                    finish();
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    btnStart.setEnabled(true);
-                    Toast.makeText(this, "Ошибка создания челленджа: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                });
+            if (finalBase.isEmpty()) {
+                Toast.makeText(this, "Выберите хотя бы один пункт чек-листа", Toast.LENGTH_SHORT).show();
+                return;
             }
-        });
 
+            ChallengeEntity ch = new ChallengeEntity(level, duration, start, "ACTIVE");
 
+            btnStart.setEnabled(false);
+
+            Executors.newSingleThreadExecutor().execute(() -> {
+                try {
+                    AppDatabase db = AppDatabase.get(this);
+                    ChallengeDao cdao = db.challengeDao();
+                    DayTaskDao tdao = db.dayTaskDao();
+                    DayProgressDao pdao = db.dayProgressDao();
+
+                    long cid = cdao.insert(ch); // ← возможный краш
+
+                    List<DayTaskEntity> allTasks = new ArrayList<>();
+                    for (int day = 1; day <= finalDuration; day++) {
+                        int order = 0;
+                        for (String title : finalBase) {
+                            allTasks.add(new DayTaskEntity(cid, day, title, false, false, order++));
+                        }
+                    }
+                    tdao.insertAll(allTasks);
+
+                    List<DayProgressEntity> board = new ArrayList<>();
+                    for (int day = 1; day <= finalDuration; day++) {
+                        board.add(new DayProgressEntity(cid, day, false));
+                    }
+                    pdao.insertAll(board);
+
+                    runOnUiThread(() -> {
+                        Toast.makeText(this,
+                                "Челлендж создан: " + level + " • " + finalDuration + " дней",
+                                Toast.LENGTH_LONG).show();
+                        startActivity(new Intent(this, ChallengeBoardActivity.class));
+                        finish();
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    runOnUiThread(() ->
+                            Toast.makeText(this, "Ошибка при создании челленджа: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                    );
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Ошибка: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
+
 
     /** Текущий список задач для дня (учитывает уровень и кастомные правки) */
     private List<String> currentDailyTasks() {

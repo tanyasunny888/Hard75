@@ -49,20 +49,19 @@ public class DayBoardAdapter extends RecyclerView.Adapter<DayBoardAdapter.VH> {
         if (isCompleted) {
             h.ivDone.setVisibility(View.VISIBLE);
             h.progress.setVisibility(View.GONE);
-            h.tvPercent.setVisibility(View.GONE);
+
             h.bgImage.setAlpha(0.5f);
             h.contentContainer.setAlpha(0.5f);
-            h.ivDone.setAlpha(1f); // галочка чёткая
+            h.ivDone.setAlpha(1f);
         } else {
             h.ivDone.setVisibility(View.GONE);
             h.progress.setVisibility(View.VISIBLE);
-            h.tvPercent.setVisibility(View.VISIBLE);
-            h.bgImage.setAlpha(1f);
-            h.contentContainer.setAlpha(1f);
 
             h.progress.setMax(100);
             h.progress.setProgress(d.percent);
-            h.tvPercent.setText(d.percent + "%");
+
+            h.bgImage.setAlpha(1f);
+            h.contentContainer.setAlpha(1f);
         }
 
         // ⚠️ клики НЕ отключаем — Activity решит editable по календарю
