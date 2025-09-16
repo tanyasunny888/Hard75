@@ -90,7 +90,19 @@ public class ReminderReceiver extends BroadcastReceiver {
                     }
                     ReminderScheduler.onAlarmFired(appCtx, action);
                 }
-            } catch (Throwable t) {
+
+                else if (ReminderScheduler.ACTION_FAILURE.equals(action)) {
+                    // Одноразовое уведомление о провале
+                    String title = "Hard 75";
+                    String text  = "Челлендж провален, попробуйте снова.";
+                    showNotification(appCtx, 203, title, text);
+
+                    // очистим флажок, чтобы не повторялось
+                    com.hard75.hard75.util.Prefs.clearFailureAlarm(appCtx);
+                    // одноразовый будильник рескейдлить не нужно
+                }
+
+        } catch (Throwable t) {
                 // проглатываем, чтобы ресивер не крэшил процесс
             } finally {
                 pr.finish();

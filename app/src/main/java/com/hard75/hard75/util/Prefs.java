@@ -11,6 +11,21 @@ public class Prefs {
     private static final String NAME = "hard75_prefs";
     private static final String KEY_CONSENT = "consent_accepted";
 
+    private static final String KEY_FAIL_ALARM_AT = "fail_alarm_at_millis";
+
+    public static void setFailureAlarmAt(Context c, long whenMillis) {
+        c.getSharedPreferences("hard75", Context.MODE_PRIVATE)
+                .edit().putLong(KEY_FAIL_ALARM_AT, whenMillis).apply();
+    }
+    public static long getFailureAlarmAt(Context c) {
+        return c.getSharedPreferences("hard75", Context.MODE_PRIVATE)
+                .getLong(KEY_FAIL_ALARM_AT, 0L);
+    }
+    // очищаем после показа уведомления
+    public static void clearFailureAlarm(Context c) {
+        c.getSharedPreferences("hard75", Context.MODE_PRIVATE)
+                .edit().remove(KEY_FAIL_ALARM_AT).apply();
+    }
     public static boolean isConsentAccepted(Context ctx) {
         return ctx.getSharedPreferences(NAME, Context.MODE_PRIVATE)
                 .getBoolean(KEY_CONSENT, false);

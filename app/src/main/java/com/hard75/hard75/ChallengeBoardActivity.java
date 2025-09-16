@@ -217,6 +217,10 @@ public class ChallengeBoardActivity extends AppCompatActivity {
             if (failed && !"FAILED".equals(activeChallenge.status)) {
                 cdao.updateStatus(activeChallenge.id, "FAILED");
                 activeChallenge.status = "FAILED";
+                if (Prefs.isRemindersEnabled(this) &&
+                        ReminderPermissions.canScheduleExactAlarms(this)) {
+                    ReminderScheduler.scheduleFailureNextMorning(this);
+                }
             }
             isFailed = failed;
             final int fSuccessDays = successDays;

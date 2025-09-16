@@ -1,7 +1,9 @@
 package com.hard75.hard75.reminders;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.app.PendingIntent.CanceledException;
 import android.content.Context;
 import android.content.Intent;
 
@@ -82,4 +84,59 @@ public class ReminderScheduler {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
     }
+
+    // добавьте новый action:
+    public static final String ACTION_FAILURE = "com.hard75.hard75.ACTION_FAILURE";
+
+    // публичный метод для назначения на следующее утро в 9:00
+    public static void scheduleFailureNextMorning(Context ctx) {
+        long when = computeNextMorning9();
+        // сохраним момент, чтобы пережить перезагрузку
+        com.hard75.hard75.util.Prefs.setFailureAlarmAt(ctx, when);
+
+        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent pi = pending(ctx, ACTION_FAILURE, 300);
+        am.cancel(pi); // на всякий случай
+        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
+    }
+
+    /** вызывать из BootReceiver, чтобы восстановить после ребута */
+    @SuppressLint("ScheduleExactAlarm")
+    public static void rescheduleFailureIfNeeded(Context ctx) {
+        long when = com.hard75.hard75.util.Prefs.getFailureAlarmAt(ctx);
+        if (when <= 0) return;
+
+        // если время уже в прошлом — покажем сразу и очистим
+        long now = System.currentTimeMillis();
+        if (when <= now) {
+            try {
+                pending(ctx, ACTION_FAILURE, 300).send();
+            } catch (CanceledException e) {
+                // фолбэк: напрямую дергаем ресивер
+                Intent i = new Intent(ctx, ReminderReceiver.class).setAction(ACTION_FAILURE);
+                ctx.sendBroadcast(i);
+            }
+            com.hard75.hard75.util.Prefs.clearFailureAlarm(ctx);
+            return;
+        }
+
+        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+        am.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                when,
+                pending(ctx, ACTION_FAILURE, 300)
+        );
+    }
+
+    // вспомогательное:
+    private static long computeNextMorning9() {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.DAY_OF_YEAR, 1);
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 9);
+        cal.set(java.util.Calendar.MINUTE, 0);
+        cal.set(java.util.Calendar.SECOND, 0);
+        cal.set(java.util.Calendar.MILLISECOND, 0);
+        return cal.getTimeInMillis();
+    }
+
 }

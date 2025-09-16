@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.os.Build;
 import android.provider.Settings;
 
+
+
 public class ReminderPermissions {
 
     /** Можно ли прямо сейчас ставить точные будильники без вылета. */

@@ -8,8 +8,13 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (!com.hard75.hard75.util.Prefs.isRemindersEnabled(context)) return;
-        // после перезагрузки переустановим будильники по сохранённым настройкам
+
+        // восстановим обычные будильники
         ReminderScheduler.scheduleAll(context);
+
+        // если было запланировано одноразовое уведомление о провале — восстановим
+        ReminderScheduler.rescheduleFailureIfNeeded(context);
     }
+
 }
 
