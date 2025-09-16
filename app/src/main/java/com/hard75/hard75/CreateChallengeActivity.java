@@ -17,6 +17,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.hard75.hard75.domain.ChallengeTemplates;
 import com.hard75.hard75.data.db.AppDatabase;
 import com.hard75.hard75.data.db.ChallengeDao;
 import com.hard75.hard75.data.db.ChallengeEntity;
@@ -24,7 +25,6 @@ import com.hard75.hard75.data.db.DayProgressDao;
 import com.hard75.hard75.data.db.DayProgressEntity;
 import com.hard75.hard75.data.db.DayTaskDao;
 import com.hard75.hard75.data.db.DayTaskEntity;
-import com.hard75.hard75.domain.ChallengeTemplates;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +34,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import com.hard75.hard75.util.Prefs;
 
 /**
  * Мастер создания челленджа:
@@ -59,9 +60,7 @@ public class CreateChallengeActivity extends AppCompatActivity {
     private com.hard75.hard75.ui.CreateTasksAdapter editAdapter;
     private com.google.android.material.button.MaterialButton btnAddTask;
 
-
-
-    // Текущий отредактированный список задач (если null — берём шаблон по уровню)
+    // Текущий отредактированный список задач (если null — берём шаблон из Prefs по уровню)
     @Nullable
     private List<String> customTasks = null;
 
@@ -74,12 +73,15 @@ public class CreateChallengeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_challenge);
 
-        rgLevel       = findViewById(R.id.rgLevel);
-        seekDuration  = findViewById(R.id.seekDuration);
-        tvDurationVal = findViewById(R.id.tvDurationVal);
-        btnStart      = findViewById(R.id.btnStart);
+        rgLevel         = findViewById(R.id.rgLevel);
+        seekDuration    = findViewById(R.id.seekDuration);
+        tvDurationVal   = findViewById(R.id.tvDurationVal);
+        btnStart        = findViewById(R.id.btnStart);
         rvEditableTasks = findViewById(R.id.rvEditableTasks);
         btnAddTask      = findViewById(R.id.btnAddTask);
+        // привязка превью:
+        // llPreview       = findViewById(R.id.llPreview);
+        // tvPreviewEmpty  = findViewById(R.id.tvPreviewEmpty);
 
         rvEditableTasks.setLayoutManager(new LinearLayoutManager(this));
         editAdapter = new com.hard75.hard75.ui.CreateTasksAdapter(new com.hard75.hard75.ui.CreateTasksAdapter.Listener() {
@@ -89,19 +91,21 @@ public class CreateChallengeActivity extends AppCompatActivity {
             @Override public void onDelete(int position) {
                 editAdapter.remove(position);
                 customTasks = editAdapter.data();
+                // updatePreview();
             }
         });
         rvEditableTasks.setAdapter(editAdapter);
 
-
-        // стартовое наполнение
-        customTasks = new ArrayList<>(com.hard75.hard75.domain.ChallengeTemplates.baseTasks(currentLevel()));
+        // --- a) стартовое наполнение — из Prefs, а не из ChallengeTemplates ---
+        customTasks = new ArrayList<>(Prefs.getTemplateOrDefault(this, currentLevel()));
         editAdapter.submit(customTasks);
+        // updatePreview();
 
-        // При смене уровня — подставляем новый шаблон
+        // При смене уровня — подставляем шаблон из Prefs
         rgLevel.setOnCheckedChangeListener((g, id) -> {
-            customTasks = new ArrayList<>(com.hard75.hard75.domain.ChallengeTemplates.baseTasks(currentLevel()));
+            customTasks = new ArrayList<>(Prefs.getTemplateOrDefault(this, currentLevel()));
             editAdapter.submit(customTasks);
+            // updatePreview();
         });
 
         // SeekBar: 0..54 + 21 = 21..75
@@ -138,6 +142,7 @@ public class CreateChallengeActivity extends AppCompatActivity {
                         editAdapter.addItem(t);
                         // синхронизируем customTasks с адаптером
                         customTasks = editAdapter.data();
+                        //updatePreview();
                     }
                 })
                 .show();
@@ -160,12 +165,11 @@ public class CreateChallengeActivity extends AppCompatActivity {
                     if (editAdapter != null) {
                         editAdapter.replace(position, t);
                         customTasks = editAdapter.data();
+                        //updatePreview();
                     }
                 })
                 .show();
     }
-
-
 
     // ----- Вспомогательные методы UI -----
 
@@ -185,7 +189,8 @@ public class CreateChallengeActivity extends AppCompatActivity {
 
     // Диалог редактирования списка задач (одна строка = один пункт)
     private void showCustomizeDialog(String level) {
-        List<String> base = ChallengeTemplates.baseTasks(level);
+        // --- a) источник списка — Prefs ---
+        List<String> base = Prefs.getTemplateOrDefault(this, level);
         if (customTasks == null || customTasks.isEmpty()) customTasks = new ArrayList<>(base);
 
         StringBuilder sb = new StringBuilder();
@@ -213,7 +218,11 @@ public class CreateChallengeActivity extends AppCompatActivity {
                         customTasks = out;
                         Toast.makeText(this, "Сохранено: " + customTasks.size() + " пункт(ов)", Toast.LENGTH_SHORT).show();
                     }
-                    updatePreview();
+                    // --- b) сохраняем шаблон и обновляем превью ---
+                    Prefs.saveTemplate(this, currentLevel(), customTasks);
+                    //updatePreview();
+                    // синхронизируем адаптер
+                    editAdapter.submit(new ArrayList<>(customTasks));
                 })
                 .show();
     }
@@ -231,9 +240,14 @@ public class CreateChallengeActivity extends AppCompatActivity {
             final int finalDuration = duration;
             long start = System.currentTimeMillis();
 
+            // --- в) берём актуальный список из customTasks или Prefs и сразу сохраняем его как шаблон ---
             List<String> baseList = (customTasks != null && !customTasks.isEmpty())
                     ? customTasks
-                    : ChallengeTemplates.baseTasks(level);
+                    : Prefs.getTemplateOrDefault(this, level);
+
+            // синхронизируем сохранённый шаблон с тем, что реально запускаем
+            Prefs.saveTemplate(this, level, baseList);
+
             final List<String> finalBase = baseList;
 
             if (finalBase.isEmpty()) {
@@ -252,7 +266,7 @@ public class CreateChallengeActivity extends AppCompatActivity {
                     DayTaskDao tdao = db.dayTaskDao();
                     DayProgressDao pdao = db.dayProgressDao();
 
-                    long cid = cdao.insert(ch); // ← возможный краш
+                    long cid = cdao.insert(ch);
 
                     List<DayTaskEntity> allTasks = new ArrayList<>();
                     for (int day = 1; day <= finalDuration; day++) {
@@ -289,36 +303,37 @@ public class CreateChallengeActivity extends AppCompatActivity {
         }
     }
 
-
     /** Текущий список задач для дня (учитывает уровень и кастомные правки) */
     private List<String> currentDailyTasks() {
         String level = currentLevel();
         if (customTasks != null && !customTasks.isEmpty()) {
             return new ArrayList<>(customTasks);
         } else {
-            return new ArrayList<>(ChallengeTemplates.baseTasks(level));
+            // по умолчанию — из Prefs
+            return new ArrayList<>(Prefs.getTemplateOrDefault(this, level));
         }
     }
 
     /** Перерисовать превью: очищаем контейнер и добавляем строки */
-    private void updatePreview() {
-        List<String> tasks = currentDailyTasks();
-        llPreview.removeAllViews();
+    //private void updatePreview() {
+    //    if (llPreview == null || tvPreviewEmpty == null) return;
 
-        if (tasks.isEmpty()) {
-            tvPreviewEmpty.setVisibility(View.VISIBLE);
-            return;
-        } else {
-            tvPreviewEmpty.setVisibility(View.GONE);
-        }
+    //    List<String> tasks = currentDailyTasks();
+    //    llPreview.removeAllViews();
 
-        LayoutInflater inflater = LayoutInflater.from(this);
-        for (String t : tasks) {
-            View row = inflater.inflate(R.layout.item_preview_task, llPreview, false);
-            TextView tv = row.findViewById(R.id.tvTask);
-            tv.setText(t);
-            llPreview.addView(row);
-        }
-    }
+    //    if (tasks.isEmpty()) {
+    //        tvPreviewEmpty.setVisibility(View.VISIBLE);
+    //        return;
+    //    } else {
+    //        tvPreviewEmpty.setVisibility(View.GONE);
+    //    }
 
+    //    LayoutInflater inflater = LayoutInflater.from(this);
+    //    for (String t : tasks) {
+    //       View row = inflater.inflate(R.layout.item_preview_task, llPreview, false);
+    //       TextView tv = row.findViewById(R.id.tvTask);
+    //       tv.setText(t);
+    //        llPreview.addView(row);
+    //    }
+    //}
 }

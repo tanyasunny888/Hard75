@@ -73,26 +73,17 @@
                 android:textSize="16sp"
                 android:layout_marginTop="4dp"/>
 
-            <!-- Конструктор чек-листа -->
-            <TextView
-                android:id="@+id/tvChecklistTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Пункты дня (чек-лист)"
-                android:textStyle="bold"
-                android:textSize="18sp"/>
-
+            <!-- Редактируемый список задач -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvEditableTasks"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false"
                 android:overScrollMode="never"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:paddingBottom="8dp"/>
 
-            <!-- Кнопка 'Добавить пункт' сразу под списком -->
+            <!-- Кнопка 'Добавить пункт' -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddTask"
                 style="@style/Widget.Material3.Button.OutlinedButton"
@@ -104,7 +95,7 @@
                 app:iconPadding="8dp"
                 app:iconGravity="textStart"/>
 
-            <!-- Большая кнопка старта в самом низу -->
+            <!-- Большая кнопка старта -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStart"
                 style="@style/Widget.Material3.Button"

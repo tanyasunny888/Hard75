@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.hard75.hard75.util.Prefs;
 
 
 import androidx.annotation.Nullable;
@@ -388,8 +389,8 @@ public class ChallengeBoardActivity extends AppCompatActivity {
         et.setHint("Одна строка — один пункт");
         et.setMinLines(6);
 
-        // предложим текущий шаблон уровня как подсказку
-        List<String> base = ChallengeTemplates.baseTasks(activeChallenge.level);
+        // текущий шаблон уровня как подсказка
+        List<String> base = Prefs.getTemplateOrDefault(this, activeChallenge.level);
         et.setText(android.text.TextUtils.join("\n", base));
 
         new androidx.appcompat.app.AlertDialog.Builder(this)
@@ -407,10 +408,16 @@ public class ChallengeBoardActivity extends AppCompatActivity {
                         Toast.makeText(this, "Список пуст", Toast.LENGTH_SHORT).show();
                         return;
                     }
+
+                    // <-- сохраняем шаблон уровня прямо здесь
+                    Prefs.saveTemplate(this, activeChallenge.level, newList);
+
+                    // затем просим подтверждение на применение к будущим дням
                     confirmApplyFutureTasks(newList);
                 })
                 .show();
     }
+
 
     private void confirmApplyFutureTasks(List<String> newList) {
         new androidx.appcompat.app.AlertDialog.Builder(this)
